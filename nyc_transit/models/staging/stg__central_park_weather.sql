@@ -23,6 +23,8 @@ renamed as (
 )
 
 select 
+    station,
+    name,
     date,
     awnd,
     prcp,

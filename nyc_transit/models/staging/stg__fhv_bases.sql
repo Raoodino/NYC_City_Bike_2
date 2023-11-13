@@ -8,6 +8,7 @@ renamed as (
 
     select
         -- clean up the base_num to be properly linked as foreign keys
+        -- but it does not work..
         trim(upper(base_number)) as base_number,
         base_name,
         dba,
