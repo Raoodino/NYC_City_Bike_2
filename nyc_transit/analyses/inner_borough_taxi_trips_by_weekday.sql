@@ -1,49 +1,24 @@
-WITH all_trips AS (
-    SELECT 
-        weekday(pickup_datetime) as weekday,
-        count(*) as num_trips,
-        pulocationid,
-        dolocationid
-    FROM 
-        {{ ref('mart__fact_all_taxi_trips') }}
-    GROUP BY ALL
-),
-total_trips AS (
-    SELECT
-        weekday,
-        SUM(num_trips) AS total_trip
-    FROM
-        all_trips
-    GROUP BY weekday
-),
-inter_borough_trips AS (
-    SELECT 
-        a.weekday,
-        SUM(a.num_trips) AS num_inter_borough_trips
-    FROM 
-        all_trips a
-    -- note: total trips counts all trips including null pick or droff location id records
-    -- inter borough trips only count trips with pickup and dropoff location id not null since locationid does not contain null (checked by dbt tests)
-    JOIN 
-        {{ref('mart__dim_locations')}} lp ON a.pulocationid = lp.locationid
-    JOIN 
-        {{ref('mart__dim_locations')}} ld ON a.dolocationid = ld.locationid
-    WHERE 
-        lp.borough != ld.borough
-    GROUP BY 
-        a.weekday
-)
+with all_trips as
+(select
+    weekday(pickup_datetime) as weekday,
+    count(*) trips
+    from {{ ref('mart__fact_all_taxi_trips') }} t
+    group by all),
 
-SELECT 
-    ibt.weekday,
-    ibt.num_inter_borough_trips,
-    tt.total_trip,
-    COALESCE(ibt.num_inter_borough_trips, 0) * 100.0 / NULLIF(tt.total_trip, 0) AS percent_inter_borough_trips
-FROM  
-    inter_borough_trips AS ibt
-LEFT JOIN 
-    total_trips AS tt ON ibt.weekday = tt.weekday
-ORDER BY 
-    ibt.weekday;
+inter_borough as
+(select
+    weekday(pickup_datetime) as weekday,
+    count(*) as trips
+from {{ ref('mart__fact_all_taxi_trips') }} t
+join {{ ref('mart__dim_locations') }} pl on t.PUlocationID = pl.LocationID
+join {{ ref('mart__dim_locations') }} dl on t.DOlocationID = dl.LocationID
+where pl.borough != dl.borough
+group by all)
 
+select all_trips.weekday,
+       all_trips.trips as all_trips,
+       inter_borough.trips as inter_borough_trips,
+       inter_borough.trips / all_trips.trips as percent_inter_borough
+from all_trips
+join inter_borough on (all_trips.weekday = inter_borough.weekday);
 --duckdb main.db -s ".read nyc_transit/target/compiled/nyc_transit/analyses/inner_borough_taxi_trips_by_weekday.sql"> answers/inner_borough_taxi_trips_by_weekday.txt
