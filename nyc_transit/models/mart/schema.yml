@@ -46,6 +46,13 @@ models:
 
       - name: duration_sec
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 540000
+              config:
+                severity: warn
 
       - name: start_station_id
         description: ""
@@ -70,6 +77,13 @@ models:
 
       - name: duration_sec
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 540000
+              config:
+                severity: warn
 
       - name: pulocationid
         description: ""
@@ -82,15 +96,23 @@ models:
     columns:
       - name: type
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
 
       - name: date
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
 
       - name: trips
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
 
       - name: average_trip_duration_min
         description: ""
+        tests:
+          - dbt_expectations.expect_column_to_exist
 
   - name: mart__fact_all_trips
     description: "all trips including bikes and taxis with duration"
@@ -109,3 +131,25 @@ models:
 
       - name: duration_sec
         description: ""
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 540000
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_to_exist
+
+  - name: mart__fact_trips_by_borough
+    description: "number of trips grouped by borough"
+    columns:
+      - name: borough
+        description: "name of the pick up borough"
+        tests:
+          - dbt_expectations.expect_column_to_exist
+
+      - name: trip_count
+        description: "number of trips"
+        tests:
+          - dbt_expectations.expect_column_to_exist
+     
